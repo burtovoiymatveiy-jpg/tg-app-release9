@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Order App</title>
+    <title>Заказ работы @awarem</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -15,136 +15,235 @@
             --bg: #1c1c1d; --sec-bg: #2c2c2e; --text: #ffffff; --hint: #8e8e93; 
             --card-border: rgba(255,255,255,0.1); --toggle-off: #3a3a3c;
         }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 16px; transition: 0.3s; }
-        .app-container { display: flex; flex-direction: column; gap: 12px; }
-        .card { background: var(--sec-bg); border-radius: 16px; padding: 14px; border: 1px solid var(--card-border); transition: 0.3s; }
-        body:has(.card:focus-within) .card:not(:focus-within) { opacity: 0.5; filter: blur(0.5px); transform: scale(0.98); }
-        .card:focus-within { transform: scale(1.02); border-color: var(--accent); box-shadow: 0 0 15px rgba(51, 144, 236, 0.2); }
-        input, select, textarea { background: var(--bg); border: 1px solid var(--card-border); border-radius: 10px; color: var(--text); font-size: 16px; padding: 10px; width: 100%; box-sizing: border-box; outline: none; }
-        label { font-size: 10px; color: var(--hint); font-weight: 800; text-transform: uppercase; margin-bottom: 6px; display: block; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg); color: var(--text); margin: 0; padding: 16px;
+            display: flex; flex-direction: column; gap: 12px; transition: 0.3s;
+        }
+
+        /* ЭФФЕКТ ФОКУСА ВНИМАНИЯ */
+        .card { 
+            background: var(--sec-bg); border-radius: 16px; padding: 14px; 
+            border: 1px solid var(--card-border); 
+            transition: transform 0.3s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Приглушение неактивных элементов */
+        body:has(.card:focus-within) .card:not(:focus-within),
+        body:has(.card:focus-within) .header-row,
+        body:has(.card:focus-within) .review-notice {
+            opacity: 0.5;
+            filter: blur(0.4px);
+            transform: scale(0.98);
+        }
+
+        /* Неоновое свечение активной карточки */
+        .card:focus-within {
+            transform: scale(1.02);
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(51, 144, 236, 0.25);
+            z-index: 10;
+        }
+
         #p-bar { position: fixed; top: 0; left: 0; height: 3px; background: var(--accent); width: 0%; transition: 0.3s; z-index: 100; }
-        .main-btn { background: var(--accent); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; width: 100%; cursor: pointer; }
-        .secondary-btn { background: var(--sec-bg); border: 1px solid var(--card-border); color: var(--accent); padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 600; text-align: center; cursor: pointer; }
-        .preview-box { background: var(--sec-bg); border: 1px dashed var(--accent); border-radius: 12px; padding: 12px; font-family: monospace; font-size: 12px; white-space: pre-line; display: none; }
+        .header-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; transition: 0.3s; }
+        .theme-toggle {
+            background: var(--sec-bg); border: 1px solid var(--card-border); 
+            border-radius: 50%; width: 42px; height: 42px;
+            display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0;
+        }
+
+        label { font-size: 10px; color: var(--hint); font-weight: 800; text-transform: uppercase; margin-bottom: 6px; display: block; }
+        input, select, textarea {
+            background: var(--bg); border: 1px solid var(--card-border); border-radius: 10px;
+            color: var(--text); font-size: 16px; padding: 10px; width: 100%; box-sizing: border-box; outline: none; transition: 0.2s;
+        }
+        input:focus, textarea:focus { border-color: var(--accent); }
+        .urgent-input { border-color: var(--accent-red) !important; color: var(--accent-red) !important; }
+
+        .row { display: flex; gap: 10px; align-items: flex-end; }
+        .flex-1 { flex: 1; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
+        .dot-online { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 70% { transform: scale(1.2); opacity: 0.5; } 100% { transform: scale(0.9); opacity: 1; } }
+
+        .main-btn { background: var(--accent); color: white; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 700; width: 100%; cursor: pointer; margin-top: 4px; }
+        .secondary-btn { background: var(--sec-bg); border: 1px solid var(--card-border); color: var(--accent); padding: 11px; border-radius: 12px; font-size: 13px; font-weight: 600; text-align: center; flex: 1; cursor: pointer; width: 100%; }
+        
+        .preview-box { background: var(--sec-bg); border: 1px dashed var(--accent); border-radius: 12px; padding: 12px; font-family: monospace; font-size: 12px; white-space: pre-line; display: none; margin: 10px 0; }
         .preview-box.show { display: block; }
+
+        .switch-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; }
+        .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--toggle-off); transition: .3s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent-green); }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        .review-notice { background: var(--sec-bg); border: 1px dashed var(--accent); border-radius: 12px; padding: 12px; font-size: 11px; text-align: center; transition: 0.3s; }
+        .version-footer { font-size: 10px; color: var(--hint); text-align: center; margin-top: 4px; opacity: 0.5; font-weight: 600; }
+        .magic-btn { font-size: 10px; background: var(--accent); color: #fff; padding: 4px 8px; border-radius: 6px; float: right; margin-top: -20px; cursor: pointer; }
     </style>
 </head>
 <body>
-    <div id="p-bar"></div>
-    <div id="app" class="app-container"></div>
+<div id="p-bar"></div>
+
+<div class="header-row">
+    <div class="secondary-btn" onclick="openLink('https://t.me/txtandpptx')">📢 Канал</div>
+    <div class="secondary-btn" onclick="openLink('https://t.me/OTZblBblawarem')">⭐ Отзывы</div>
+    <div class="theme-toggle" onclick="toggleTheme()" id="theme-btn">☀️</div>
+</div>
+
+<div class="card" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <div class="status-dot dot-online"></div>
+        <span id="welcome-text" style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: var(--accent-green);">Статус: Свободен</span>
+    </div>
+</div>
+
+<div class="card">
+    <label>Вид работы</label>
+    <select id="type" oninput="update()">
+        <option value="Реферат">📝 Реферат</option>
+        <option value="Презентация">📊 Презентация</option>
+        <option value="Доклад">🎤 Доклад</option>
+        <option value="Проект">💡 Проект</option>
+        <option value="Переписать лекцию">🖋 Переписать лекцию</option>
+    </select>
+    
+    <div class="row" style="margin-top:12px">
+        <div class="flex-1">
+            <label id="unit-label">Кол-во страниц</label>
+            <input type="number" id="count" placeholder="0" oninput="update()">
+        </div>
+        <div class="flex-1">
+            <label>Дедлайн (дд.мм)</label>
+            <input type="text" id="date" maxlength="5" placeholder="18.02" oninput="update()">
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <label>Детали и бюджет</label>
+    <span class="magic-btn" onclick="genPlan()">✨ План</span>
+    <textarea id="details" rows="3" placeholder="Тема, оформление..." oninput="update()"></textarea>
+    <div style="margin-top:12px">
+        <label>Сумма (₽)</label>
+        <input type="text" id="price" placeholder="500" oninput="update()">
+    </div>
+</div>
+
+<div class="card switch-row">
+    <span style="font-size: 14px; font-weight: 700;">🚨 Срочно</span>
+    <label class="switch">
+        <input type="checkbox" id="urgent" onchange="update()">
+        <span class="slider"></span>
+    </label>
+</div>
+
+<div class="preview-box" id="preview"></div>
+<button class="main-btn" onclick="copy()">Скопировать анкету</button>
+<button class="secondary-btn" style="color:var(--accent-red); border:none; margin-top:4px" onclick="clearAll()">🗑 Очистить</button>
+
+<div class="review-notice">Обязательно оставьте отзыв после выполнения!</div>
+<div class="version-footer">BETA 0.30 • @awarem</div>
 
 <script>
-const OrderApp = {
-    state: {
-        type: 'Реферат', count: '', date: '', price: '', details: '', theme: 'light'
-    },
-    tg: window.Telegram.WebApp,
+    const tg = window.Telegram.WebApp;
+    tg.expand();
 
-    init() {
-        this.tg.expand();
-        this.loadState();
-        this.render();
-        this.applyTheme();
-        this.setWelcomeStatus();
-        this.syncUI();
-    },
+    // Вибрация при фокусе на полях
+    document.querySelectorAll('input, textarea, select').forEach(el => {
+        el.addEventListener('focus', () => tg.HapticFeedback.impactOccurred('light'));
+    });
 
-    render() {
-        document.getElementById('app').innerHTML = `
-            <div style="display: flex; gap: 10px;">
-                <div class="secondary-btn" style="flex:1" onclick="OrderApp.open('https://t.me/txtandpptx')">📢 Канал</div>
-                <div class="secondary-btn" style="flex:1" onclick="OrderApp.open('https://t.me/OTZblBblawarem')">⭐ Отзывы</div>
-                <div class="secondary-btn" style="width: 42px; border-radius: 50%" onclick="OrderApp.toggleTheme()">☀️</div>
-            </div>
-            <div class="card"><div id="status-text" style="font-size: 12px; font-weight: 800; color: var(--accent-green);">Статус...</div></div>
-            <div class="card">
-                <label>Вид работы</label>
-                <select id="f-type" onchange="OrderApp.updateState('type', this.value)">
-                    <option value="Реферат">📝 Реферат</option>
-                    <option value="Презентация">📊 Презентация</option>
-                    <option value="Доклад">🎤 Доклад</option>
-                </select>
-                <div style="display: flex; gap: 10px; margin-top: 12px;">
-                    <div style="flex: 1"><label id="l-count">Страниц</label>
-                    <input type="number" id="f-count" placeholder="0" oninput="OrderApp.updateState('count', this.value)"></div>
-                    <div style="flex: 1"><label>Дедлайн</label>
-                    <input type="text" id="f-date" placeholder="18.02" oninput="OrderApp.updateState('date', this.value)"></div>
-                </div>
-            </div>
-            <div class="card">
-                <label>Детали</label>
-                <textarea id="f-details" rows="3" placeholder="Тема..." oninput="OrderApp.updateState('details', this.value)"></textarea>
-                <div style="margin-top: 12px"><label>Бюджет (₽)</label>
-                <input type="text" id="f-price" placeholder="500" oninput="OrderApp.updateState('price', this.value)"></div>
-            </div>
-            <div class="preview-box" id="preview"></div>
-            <button class="main-btn" onclick="OrderApp.copyOrder()">Скопировать анкету</button>
-            <div class="secondary-btn" style="color: var(--accent-red)" onclick="OrderApp.clearAll()">🗑 Сбросить всё</div>
-        `;
-        // Заполнение полей из загруженного состояния
-        Object.keys(this.state).forEach(key => {
-            const el = document.getElementById('f-' + key);
-            if (el) el.value = this.state[key];
-        });
-    },
+    function setWelcome() {
+        const hour = new Date().getHours();
+        let msg = (hour >= 5 && hour < 12) ? "Доброе утро! Свободен ☕" :
+                  (hour >= 12 && hour < 18) ? "Добрый день! На связи ☀️" :
+                  (hour >= 18 && hour < 23) ? "Добрый вечер! Работаю 🌙" : "Ночной заказ? Принимаю! 🦉";
+        document.getElementById('welcome-text').innerText = msg;
+    }
 
-    updateState(key, value) {
-        this.state[key] = value;
-        localStorage.setItem('order_state', JSON.stringify(this.state));
-        this.syncUI();
-    },
+    function openLink(url) { tg.HapticFeedback.impactOccurred('light'); tg.openTelegramLink(url); }
 
-    loadState() {
-        const saved = localStorage.getItem('order_state');
-        if (saved) this.state = { ...this.state, ...JSON.parse(saved) };
-    },
+    function toggleTheme() {
+        const isD = document.body.getAttribute('data-theme') === 'dark';
+        document.body.setAttribute('data-theme', isD ? 'light' : 'dark');
+        document.getElementById('theme-btn').innerText = isD ? '☀️' : '🌙';
+        tg.HapticFeedback.impactOccurred('medium');
+    }
 
-    syncUI() {
-        const { type, count, date, price, details } = this.state;
-        document.getElementById('l-count').innerText = type === 'Презентация' ? "Слайдов" : "Страниц";
-        const filled = [count, date, price].filter(Boolean).length;
-        document.getElementById('p-bar').style.width = (filled / 3 * 100) + '%';
+    function genPlan() {
+        const type = document.getElementById('type').value;
+        const plans = {
+            "Реферат": "Тема:\n1. Введение\n2. Глава 1\n3. Заключение\nГОСТ",
+            "Презентация": "Тема:\nСлайдов: \nСтиль: ",
+            "Доклад": "Тема:\nТезисы:\nШрифт: 14"
+        };
+        document.getElementById('details').value = plans[type] || "Тема:\nДетали:";
+        update();
+        tg.HapticFeedback.notificationOccurred('success');
+    }
+
+    function update() {
+        const type = document.getElementById('type').value,
+              count = document.getElementById('count').value,
+              dateInput = document.getElementById('date'),
+              dateValue = dateInput.value,
+              price = document.getElementById('price').value,
+              det = document.getElementById('details').value,
+              urg = document.getElementById('urgent');
+
+        // Проверка на срочность (сегодня/завтра)
+        if (dateValue.length >= 4 && dateValue.includes('.')) {
+            const [d, m] = dateValue.split('.').map(Number);
+            const now = new Date();
+            const inputDate = new Date(now.getFullYear(), m - 1, d);
+            const diff = (inputDate - now) / (1000 * 60 * 60 * 24);
+            if (diff <= 1 && diff >= -1) {
+                if (!urg.checked) { urg.checked = true; tg.HapticFeedback.notificationOccurred('warning'); }
+                dateInput.classList.add('urgent-input');
+            } else { dateInput.classList.remove('urgent-input'); }
+        }
+
+        let fields = [count, dateValue, price, det].filter(x => x.length > 0).length;
+        document.getElementById('p-bar').style.width = (fields / 4 * 100) + '%';
+        document.getElementById('unit-label').innerText = type.includes("През") ? "Слайдов" : "Страниц";
+        
         const preview = document.getElementById('preview');
         if (count && price) {
             preview.classList.add('show');
-            preview.innerText = `1. Вид: ${type}\n2. Кол-во: ${count}\n3. Дедлайн: ${date || '—'}\n4. Сумма: ${price} ₽\n5. Детали: ${details || 'нет'}\n---\n✅ Предоплата 100%`;
-        } else preview.classList.remove('show');
-    },
+            let h = urg.checked ? '🚨 СРОЧНЫЙ ЗАКАЗ 🚨\n' : '';
+            preview.innerText = `${h}1. Вид: ${type}\n2. Кол-во: ${count}\n3. Дедлайн: ${dateValue || '—'}\n4. Сумма: ${price} ₽\n5. Детали: ${det || 'нет'}\n---\n✅ Согласен на 100% предоплату.`;
+        } else { preview.classList.remove('show'); }
+    }
 
-    copyOrder() {
-        const text = document.getElementById('preview').innerText;
-        if (!this.state.count) return this.tg.showAlert("Заполните форму!");
-        navigator.clipboard.writeText(text);
-        this.tg.HapticFeedback.notificationOccurred('success');
-        this.tg.showConfirm("Скопировано! Написать @awarem?", (ok) => ok && this.open("https://t.me/awarem"));
-    },
-
-    clearAll() {
-        this.tg.showConfirm("Удалить все данные?", (ok) => {
-            if (ok) { localStorage.removeItem('order_state'); location.reload(); }
+    async function copy() {
+        if (!document.getElementById('count').value || !document.getElementById('price').value) {
+            tg.showAlert("Сначала укажите количество и цену!"); return;
+        }
+        await navigator.clipboard.writeText(document.getElementById('preview').innerText);
+        tg.HapticFeedback.notificationOccurred('success');
+        tg.showConfirm("Анкета скопирована! Написать исполнителю?", (ok) => {
+            if (ok) tg.openTelegramLink("https://t.me/awarem");
         });
-    },
+    }
 
-    toggleTheme() {
-        this.state.theme = this.state.theme === 'light' ? 'dark' : 'light';
-        localStorage.setItem('order_state', JSON.stringify(this.state));
-        this.applyTheme();
-        this.tg.HapticFeedback.impactOccurred('medium');
-    },
+    function clearAll() {
+        tg.showConfirm("Очистить всё?", (ok) => {
+            if (ok) {
+                document.querySelectorAll('input, textarea').forEach(el => el.value = '');
+                document.getElementById('urgent').checked = false;
+                update();
+            }
+        });
+    }
 
-    applyTheme() { document.body.setAttribute('data-theme', this.state.theme); },
-    
-    setWelcomeStatus() {
-        const h = new Date().getHours();
-        const msg = h < 12 ? "Доброе утро! ☕" : h < 18 ? "На связи ☀️" : "Работаю 🌙";
-        document.getElementById('status-text').innerText = `Статус: ${msg}`;
-    },
-
-    open(url) { this.tg.openTelegramLink(url); }
-};
-
-OrderApp.init();
+    setWelcome();
+    update();
 </script>
 </body>
 </html>
-
